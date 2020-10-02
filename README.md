@@ -1,5 +1,7 @@
-<b>Current version:</b> 0.0.1
-
+<b>Current version:</b> 0.0.1<br><br>
+<b>DEMO:</b><br>
+You can view a demo of this file <a href="https://crezzur.com/demoshop17/myshoprepair.php" target="_blank">here</a>
+<br><br>
 <b>Prestashop minimum requirements</b><br>
 myShopRepair has a tool which allows you to check your web-shop configuration in seconds.
 This way you can see if you have the required PHP version and MYSQLI extension. This tool will also check if you have set your php.ini correctly and give you the required and recommended values.
@@ -25,9 +27,6 @@ Using myShopRepair will also give you the opportunity  to enable or disable SSL 
 <br><br>
 <b>Automatic version checker:</b><br>
 myShopRepair tool comes with an automatic version checker. This way you will be informed if you are running a myShopRepair version which is outdated.
-<br><br>
-<b>DEMO:</b><br>
-You can view a demo of this file <a href="https://crezzur.com/demoshop17/myshoprepair.php" target="_blank">here</a>
 <br><br>
 <b>INFORMATION:</b><br>
 The file myshoprepair.php needs to be placed where your prestashop web-shop is installed. for example 'mystore.com/myshoprepair.php'.
