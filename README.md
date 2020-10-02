@@ -1,6 +1,6 @@
 <b>Current version:</b> 0.0.1<br><br>
 <b>DEMO:</b><br>
-You can view a demo of this file <a href="https://crezzur.com/demoshop17/myshoprepair.php" target="_blank">here</a>
+You can view a demo of <b>myShopRepair</b> <a href="https://crezzur.com/demoshop17/myshoprepair.php" target="_blank">here</a>
 <br><br>
 <b>Prestashop minimum requirements</b><br>
 myShopRepair has a tool which allows you to check your web-shop configuration in seconds.
