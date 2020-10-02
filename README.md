@@ -1,4 +1,4 @@
-Current version: 0.0.1
+<b>Current version:</b> 0.0.1
 
 Prestashop minimum requirements
 myShopRepair has a tool which allows you to check your web-shop configuration in seconds.
