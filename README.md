@@ -7,10 +7,10 @@ It will also check if you have activated all necessary PHP extensions and check 
 <br>
 <b>Clear cache and reset .htaccess:</b><br>
 myShopRepair can delete your cache folder in seconds, this way you can remove your cache without needing to connect to your FTP client. This feature comes in handy when you have lost access to your back-office.
-<br>
+<br><br>
 You will also have the option to reset your .htaccess file, This could be needed when moving to a new shop or when you have troubles with Friendly URL function.
 The reset .htaccess function will only reset the lines between the Prestashop comment (# ~~start~~ lines lines  lines # ~~end~~). This way it prevents your store losing important settings.
-<br>
+<br><br>
 <b>Web-shop to a new domain:</b><br>
 myShopRepair will help you when you have moved your web-shop to a new domain and did not change the required fields. Our tool will allow you to change your Shop domain name, SSL domain and Base URI which are required parameters to change when moving to a new domain. Our tool will allow you to make these changes without having to run MYSQL codes your self.
 <br>
