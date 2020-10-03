@@ -1,4 +1,4 @@
-<b>Current version:</b> 0.0.1<br><br>
+<b>Current version:</b> 0.0.2<br><br>
 <b>DEMO:</b><br>
 You can view a demo of <b>myShopRepair</b> <a href="https://crezzur.com/demoshop17/myshoprepair.php" target="_blank">here</a>
 <br><br>
