@@ -2,11 +2,48 @@
 include('config/config.inc.php');
 
     // Version checker
-    $demo = false;
+    $curv = '0.0.2';
+    $dcheck = false;
+    $fcheck = false;
+    $tab = 1;
     $v = file_get_contents("https://crezzur.com/versioncheck.php", false);
     $v = json_decode($v, true);
-    if ($v['version'] != '0.0.1' ) {
-        $e = '<div class="alert alert-danger text-center font-weight-bold" role="alert">You are using an old version of myShopRepair! Please update your php file to the newest version!</div>';
+    if ($v['version'] != $curv) { $fcheck = true; }
+
+    function setDebug()
+    {
+        if (is_readable('config/defines.inc.php')) {
+            $s = (debugMode() == 'true') ? 'false' : 'true';
+            $file = _PS_ROOT_DIR_ . '/config/defines.inc.php';
+            $cleanedFileContent = php_strip_whitespace($file);
+            $fileContent = Tools::file_get_contents($file);
+            if (!preg_match('/define\(\'_PS_MODE_DEV_\', ([a-zA-Z]+)\);/Ui', $cleanedFileContent)) {
+                return array('status' => 'danger', 'msg' => "Unable to find `define('_PS_MODE_DEV_', ".debugMode().")` in defines.inc.php !");
+            }
+            $fileContent = preg_replace('/define\(\'_PS_MODE_DEV_\', ([a-zA-Z]+)\);/Ui', 'define(\'_PS_MODE_DEV_\', ' . $s . ');', $fileContent);
+            if (!@file_put_contents($file, $fileContent)) {
+                return array('status' => 'danger', 'msg' => 'The file `config/defines.inc.php is not writeable!');
+            }
+            if (function_exists('opcache_invalidate')) {
+                opcache_invalidate($file);
+            }
+            return array('status' => 'success', 'msg' => 'Debug modus successfully set to <b>' . $s . '</b>');
+        } else {
+            return array('status' => 'danger', 'msg' => 'The file `config/defines.inc.php is not readable!');
+        }
+    }
+
+    function debugMode()
+    {
+        $clean = '';
+        $path = _PS_ROOT_DIR_ . '/config/defines.inc.php';
+        if (!preg_match('/define\(\'_PS_MODE_DEV_\', ([a-zA-Z]+)\);/Ui', $clean, $value)) {
+            $clean = php_strip_whitespace($path);
+            if (!preg_match('/define\(\'_PS_MODE_DEV_\', ([a-zA-Z]+)\);/Ui', $clean, $value)) {
+                return false;
+            }
+        }
+        return strtolower($value[1]);
     }
 
     function deleteCache($target) {
@@ -15,27 +52,41 @@ include('config/config.inc.php');
             foreach( $files as $file ){
                 deleteCache( $file );
             }
-            rmdir( $target );
+            rmdir($target);
         } elseif(is_file($target)) {
-            unlink( $target );  
+            unlink($target);  
         }
     }
 
-    if(Tools::isSubmit('generateHtaccess')) {
-        if ($demo == false) {
-            Tools::generateHtaccess();
+    if(Tools::isSubmit('changeDebug')) {
+        if ($dcheck == false) {
+            $msg = setDebug();
+        } else {
+            $msg = array('status' => 'info', 'msg' => 'myShopRepair is in demo modus, changes where not saved!');
         }
-        $e = '<div class="alert alert-success mx-5 mt-3 alert-dismissible fade show" role="alert">.htaccess successfully updated!<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+            $tab = 3;
+    }
+    if(Tools::isSubmit('generateHtaccess')) {
+        if ($dcheck == false) {
+            Tools::generateHtaccess();
+            $msg = array('status' => 'success', 'msg' => '.htaccess successfully updated!');
+        } else {
+            $msg = array('status' => 'info', 'msg' => 'myShopRepair is in demo modus, changes where not saved!');
+        }
+        $tab = 3;
     }
     if(Tools::isSubmit('deleteCache')) {
-        if ($demo == false) {
+        if ($dcheck == false) {
             deleteCache('var/cache/');
             mkdir('var/cache', 0755);
+            $msg = array('status' => 'success', 'msg' => 'Cache cleared successfully!');
+        } else {
+            $msg = array('status' => 'info', 'msg' => 'myShopRepair is in demo modus, changes where not saved!');
         }
-        $e = '<div class="alert alert-success mx-5 mt-3 alert-dismissible fade show" role="alert">All caches cleared successfully!<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+        $tab = 3;
     }
     if(Tools::isSubmit('savedatabase')) {
-        if ($demo == false) {
+        if ($dcheck == false) {
             Db::getInstance()->execute('UPDATE '. _DB_PREFIX_ .'configuration SET value = '. (int)Tools::getValue('maina') .' WHERE name = "PS_SHOP_ENABLE"');
             Db::getInstance()->execute('UPDATE '. _DB_PREFIX_ .'configuration SET value = "'. pSQL(Tools::getValue('mainp')) .'" WHERE name = "PS_MAINTENANCE_IP"');
 
@@ -45,15 +96,18 @@ include('config/config.inc.php');
             Db::getInstance()->execute('UPDATE '. _DB_PREFIX_ .'configuration SET value = "'. pSQL(Tools::getValue('ssld')) .'" WHERE name = "PS_SHOP_DOMAIN_SSL"');
             Db::getInstance()->execute('UPDATE '. _DB_PREFIX_ .'configuration SET value = '. (int)Tools::getValue('ssla') .' WHERE name = "PS_SSL_ENABLED"');
             Db::getInstance()->execute('UPDATE '. _DB_PREFIX_ .'configuration SET value = '. (int)Tools::getValue('sslb') .' WHERE name = "PS_SSL_ENABLED_EVERYWHERE"');
+            $msg = array('status' => 'success', 'msg' => 'Prestashop MYSQL Database values successfully updated!');
+        }  else {
+            $msg = array('status' => 'info', 'msg' => 'myShopRepair is in demo modus, changes where not saved!');
         }
-        $e = '<div class="alert alert-success mx-5 mt-3 alert-dismissible fade show" role="alert">Prestashop MYSQL Database values successfully updated!<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+        $tab = 3;
     }
 
     $maina = Db::getInstance()->getValue('SELECT value FROM '. _DB_PREFIX_ .'configuration WHERE name = "PS_SHOP_ENABLE"');
-    if ($demo == false) {
+    if ($dcheck == false) {
         $mainp = Db::getInstance()->getValue('SELECT value FROM '. _DB_PREFIX_ .'configuration WHERE name = "PS_MAINTENANCE_IP"');
     } else {
-        $mainp = 'myfakeip, mysecondfakeip';
+        $mainp = 'mydemoip, myseconddemoip';
     }
     $shopa = Db::getInstance()->getValue('SELECT domain FROM '. _DB_PREFIX_ .'shop_url WHERE id_shop = 1');
     $shopb = Db::getInstance()->getValue('SELECT domain_ssl FROM '. _DB_PREFIX_ .'shop_url WHERE id_shop = 1');
@@ -450,7 +504,7 @@ include('config/config.inc.php');
 <meta name="description" content=""/>
 <meta name="author" content="https://crezzur.com"/>
 <link rel="icon" href="https://crezzur.com/img/crezzur-logo-1544601440.jpg"/>
-<title>myShopRepair - v0.0.1</title>
+<title>myShopRepair - <?php echo 'v'.$curv; ?></title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" rel="stylesheet" />
 <style>
@@ -506,18 +560,28 @@ label {
 </head>
 <body class="h-100">
 <div id="page-container" class="container-fluid pr-0 pl-0 h-100 d-flex flex-column">
-<?php if ($demo == true) { echo '<div class="alert alert-info text-center font-weight-bold" role="alert">You are viewing a demo version, changes will not be saved.</div>'; } ?>
-<?php if(isset($e)) { echo $e; } ?>
+<?php 
+    if ($dcheck == true) { 
+        echo '<div class="alert alert-info text-center font-weight-bold" role="alert">You are viewing a demo version, changes will not be saved.</div>';
+    } if ($fcheck == true) { 
+        echo '<div class="alert alert-danger text-center font-weight-bold" role="alert">You are using version '.$curv.' of myShopRepair which is outdated! Please update your version of myShopRepair to version '.$v['version'].'.</div>';
+    } if (isset($msg)) {
+        echo '<div class="alert alert-'.$msg['status'].' mx-5 mt-3 alert-dismissible fade show" role="alert">'.$msg['msg'].'
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+    }
+?>
 <div class="pt-4">
     <nav>
         <div class="nav nav-tabs pl-4" id="nav-tab" role="tablist">
-            <a class="nav-item nav-link active" id="nav-welcome-tab" data-toggle="tab" href="#nav-welcome" role="tab" aria-controls="nav-welcome" aria-selected="true">Welcome</a>
-            <a class="nav-item nav-link" id="nav-info-tab" data-toggle="tab" href="#nav-info" role="tab" aria-controls="nav-info" aria-selected="false">Installation requirements</a>
-            <a class="nav-item nav-link" id="nav-contact-tab" data-toggle="tab" href="#nav-contact" role="tab" aria-controls="nav-contact" aria-selected="false">Settings</a> </div>
+            <a class="nav-item nav-link <?php if($tab == 1) { echo 'active'; } ?>" id="nav-welcome-tab" data-toggle="tab" href="#nav-welcome" role="tab" aria-controls="nav-welcome" aria-selected="true">Welcome</a>
+            <a class="nav-item nav-link <?php if($tab == 2) { echo 'active'; } ?>" id="nav-info-tab" data-toggle="tab" href="#nav-info" role="tab" aria-controls="nav-info" aria-selected="false">Installation requirements</a>
+            <a class="nav-item nav-link <?php if($tab == 3) { echo 'active'; } ?>" id="nav-contact-tab" data-toggle="tab" href="#nav-contact" role="tab" aria-controls="nav-contact" aria-selected="false">Settings</a>
+            <a class="nav-item nav-link <?php if($tab == 4) { echo 'active'; } ?>" id="nav-log-tab" data-toggle="tab" href="#nav-log" role="tab" aria-controls="nav-loh" aria-selected="false">Changelog</a>
+        </div>
     </nav>
     <div class="tab-content" id="nav-tabContent">
 
-        <div class="tab-pane fade show active" id="nav-welcome" role="tabpanel" aria-labelledby="nav-welcome-tab">
+        <div class="tab-pane fade <?php if($tab == 1) { echo 'show active'; } ?>" id="nav-welcome" role="tabpanel" aria-labelledby="nav-welcome-tab">
             <div class="container mt-5">
                 <div class="row">
                     <div class="col-md-10">
@@ -525,7 +589,7 @@ label {
                             <div class="card-avatar"> <a target="_blank" href="https://crezzur.com"> <img class="img" src="https://crezzur.com/img/logocrezzur150.png"> </a> </div>
                             <div class="table">
                                 <h4 class="card-caption pt-3">myShopRepair</h4>
-                                <h6 class="category text-muted">v0.0.1 - 01/10/2020</h6>
+                                <h6 class="category text-muted">Version <?php echo $curv; ?></h6>
                                 <h5 class="pt-3">Welkom Prestashop user!</h5>
                                 This page is created by <a target="_blank" href="https://www.prestashop.com/forums/profile/840493-crezzur/">Crezzur</a> and maintained with the contribution of Prestashop members. <br>
                                 If you notice a bug or are in need of an update you can post your request on the Prestashop topic <a href="https://www.prestashop.com/forums/topic/1032900-tool-myshoprepair/">here</a>. <br>
@@ -557,7 +621,7 @@ label {
             </div>
         </div>
     
-        <div class="tab-pane fade" id="nav-info" role="tabpanel" aria-labelledby="nav-info-tab">
+        <div class="tab-pane fade <?php if($tab == 2) { echo 'show active'; } ?>" id="nav-info" role="tabpanel" aria-labelledby="nav-info-tab">
             <div class="row justify-content-md-center">
                 <div class="text-muted pt-2">This page is a copy of <a target="_blank" href="https://github.com/PrestaShop/php-ps-info">Github php-ps-info</a> - author: <a target="_blank" href="https://github.com/PierreRambaud">PierreRambaud</a></div>
                 <main role="main" class="col-md-10 pt-3">
@@ -685,7 +749,7 @@ label {
             </div>
         </div>
     
-        <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
+        <div class="tab-pane fade <?php if($tab == 3) { echo 'show active'; } ?>" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">
             <div class="row mt-5">
                 <div class="col-md-1"></div>
                 <div class="col-md-5">
@@ -701,16 +765,20 @@ label {
                                     </tr>
                                     <tr>
                                         <td>Using the <b>delete</b> button will remove all <b>cache</b> files inside the <i>var/cache/...</i> folder.</td>
-                                        <td class=" col-md-2 text-center"><button class="btn btn-warning" form="settings" name="deleteCache">Delete</button></td>
+                                        <td class=" col-md-2 text-center">
+                                            <button class="btn btn-warning" form="settings" name="deleteCache">Delete</button>
+                                        </td>
                                     </tr>
                                     <tr>
-                                        <td>In order to display errors you need to put your website in debugging mode. (<b>true</b>). </td>
-                                        <td class="bg-<?php echo (_PS_MODE_DEV_ === true) ? 'warning' : 'success' ?>"><?php echo (_PS_MODE_DEV_ === true) ? 'Debug: TRUE' : 'Debug: FALSE' ?></td>
+                                        <td>In order to display errors you need to set your debugging mode to true.
+                                            Your shop is currently <b><?php echo (debugMode() == 'true') ? 'in' : 'not in' ?></b> debugging modus.
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-<?php echo (debugMode() == 'true') ? 'warning' : 'success' ?>" form="settings" name="changeDebug"><?php echo (debugMode() == 'true') ? 'Disable debug' : 'Enable debug' ?></button>
+                                        </td>
                                     </tr>
                                 </table>
-                            <div class="text-muted text-center">
-                            When debugging is set to false no errors will be displayed. To enable debugging go to <b>yourstore/config/defines.inc.php</b> and change <b>define('_PS_MODE_DEV_', false)</b> to <b>true</b>.</div>
-                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-5">
@@ -787,13 +855,34 @@ label {
                 </div>
             </div>
         </div>
+
+        <div class="tab-pane fade <?php if($tab == 4) { echo 'show active'; } ?>" id="nav-log" role="tabpanel" aria-labelledby="nav-log-tab">
+            <div class="container mt-5">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="card">
+                            <div class="card-header">Information about latest updates and bugfixes</div>
+                            <div class="card-body text-left px-5 py-4 text-muted">
+                                <b>Version 0.0.2 - Release 03/10/2020</b><br>
+                                03/10/2020 - Added option to enable and disable debug mode with a button click using myShopRepair tool.<br>
+                                03/10/2020 - Update to an improved messaging system.<br>
+                                <br>
+                                <b>Version 0.0.1 - Release 01/10/2020</b><br>
+                                01/10/2020 - Release date of version 0.0.1 of the tool myShopRepair
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
     
             <!-- Footer -->
             <footer class="d-flex justify-content-center mt-auto text-center" style="background-color: #f7f7f7;">
                 <div class="my-3">
-                    © <?php echo date('Y') ?> - myShopRepair brought to you by <a href="https://crezzur.com/">Crezzur</a>
+                    © <?php echo date('Y') ?> - myShopRepair version <?php echo $curv; ?> brought to you by <a href="https://crezzur.com/">Crezzur</a>
                 </div>
             </footer>
             <!-- END Footer -->
