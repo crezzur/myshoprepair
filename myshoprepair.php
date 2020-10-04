@@ -760,12 +760,12 @@ label {
                             <form id="settings" action="?" method="post"></form>
                                 <table class="table table-bordered">
                                     <tr>
-                                        <td>Using the <b>update</b> button will regenerate your <b>.htaccess</b> file with the latest Prestashop settings.</td>
-                                        <td class=" col-md-2 text-center"><button class="btn btn-info" form="settings" name="generateHtaccess">Update</button></td>
+                                        <td class="col-md-10">Using the <b>update</b> button will regenerate your <b>.htaccess</b> file with the latest Prestashop settings.</td>
+                                        <td class="col-md-2 text-center"><button class="btn btn-info" form="settings" name="generateHtaccess">Update</button></td>
                                     </tr>
                                     <tr>
                                         <td>Using the <b>delete</b> button will remove all <b>cache</b> files inside the <i>var/cache/...</i> folder.</td>
-                                        <td class=" col-md-2 text-center">
+                                        <td class="text-center">
                                             <button class="btn btn-warning" form="settings" name="deleteCache">Delete</button>
                                         </td>
                                     </tr>
