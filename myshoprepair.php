@@ -1,14 +1,21 @@
 <?php
 include('config/config.inc.php');
 
+    // CHANGE THIS TOKEN TO SOMETHING SECURE, THIS WAY ONLY AUTHORIZED PEOPLE CAN ACCESS THE PAGE
+    $yourtoken = 'b48a877f50d20963eaa2ccab09651c';
+
+    // Check if the client use the correct crezzur_token, url to use: www.yourstore.com/myshoprepair.php?secure_key=b48a877f50d20963eaa2ccab09651c
+    if (!Tools::getValue('crezzur_token') || Tools::getValue('crezzur_token') != $yourtoken) {
+            die('UNAUTHORIZED: You are not authorized to visit this page!');
+    }
     // Version checker
-    $curv = '0.0.2';
-    $dcheck = false;
-    $fcheck = false;
+    $curv = '0.0.3';
+    $dcheck = false; // DEMO MODE = TRUE / FALSE
     $tab = 1;
-    $v = file_get_contents("https://crezzur.com/versioncheck.php", false);
-    $v = json_decode($v, true);
-    if ($v['version'] != $curv) { $fcheck = true; }
+    $contents = Tools::file_get_contents("https://crezzur.com/versioncheck.php", false);
+    if ($contents) {
+        $v = json_decode($contents, true);
+    }
 
     function setDebug()
     {
@@ -561,11 +568,19 @@ label {
 <body class="h-100">
 <div id="page-container" class="container-fluid pr-0 pl-0 h-100 d-flex flex-column">
 <?php 
+    if(!ini_get('allow_url_fopen')) {
+        echo '<div class="alert alert-warning text-center font-weight-bold" role="alert">PHP <b>allow_url_fopen</b> is disabled. file_get_contents will not work.</div>';
+    }
+
     if ($dcheck == true) { 
         echo '<div class="alert alert-info text-center font-weight-bold" role="alert">You are viewing a demo version, changes will not be saved.</div>';
-    } if ($fcheck == true) { 
-        echo '<div class="alert alert-danger text-center font-weight-bold" role="alert">You are using version '.$curv.' of myShopRepair which is outdated! Please update your version of myShopRepair to version '.$v['version'].'.</div>';
-    } if (isset($msg)) {
+    }
+    if ($v['version'] && $v['version'] > $curv) { 
+        echo '<div class="alert alert-warning text-center font-weight-bold" role="alert">You are using version '.$curv.' of myShopRepair which is outdated! Please update your version of myShopRepair to version '.$v['version'].'.</div>';
+    } elseif (!$v['version']) {
+        echo '<div class="alert alert-danger text-center font-weight-bold" role="alert">There is a problem retrieving information from remote servers. This issue needs to be resolved in order to use Prestashop properly.</div>';
+    }
+    if (isset($msg)) {
         echo '<div class="alert alert-'.$msg['status'].' mx-5 mt-3 alert-dismissible fade show" role="alert">'.$msg['msg'].'
         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
     }
@@ -760,12 +775,12 @@ label {
                             <form id="settings" action="?" method="post"></form>
                                 <table class="table table-bordered">
                                     <tr>
-                                        <td class="col-md-10">Using the <b>update</b> button will regenerate your <b>.htaccess</b> file with the latest Prestashop settings.</td>
-                                        <td class="col-md-2 text-center"><button class="btn btn-info" form="settings" name="generateHtaccess">Update</button></td>
+                                        <td>Using the <b>update</b> button will regenerate your <b>.htaccess</b> file with the latest Prestashop settings.</td>
+                                        <td class=" col-md-2 text-center"><button class="btn btn-info" form="settings" name="generateHtaccess">Update</button></td>
                                     </tr>
                                     <tr>
                                         <td>Using the <b>delete</b> button will remove all <b>cache</b> files inside the <i>var/cache/...</i> folder.</td>
-                                        <td class="text-center">
+                                        <td class=" col-md-2 text-center">
                                             <button class="btn btn-warning" form="settings" name="deleteCache">Delete</button>
                                         </td>
                                     </tr>
@@ -863,6 +878,10 @@ label {
                         <div class="card">
                             <div class="card-header">Information about latest updates and bugfixes</div>
                             <div class="card-body text-left px-5 py-4 text-muted">
+                                <b>Version 0.0.3 - Release 12/07/2021</b><br>
+                                Added checker for PHP setting allow_url_fopen, which is required for a smooth back-office.<br>
+                                Added token security to prevent unauthorized access to the myshoprepair file. <br>
+                                <br>
                                 <b>Version 0.0.2 - Release 03/10/2020</b><br>
                                 03/10/2020 - Added option to enable and disable debug mode with a button click using myShopRepair tool.<br>
                                 03/10/2020 - Update to an improved messaging system.<br>
