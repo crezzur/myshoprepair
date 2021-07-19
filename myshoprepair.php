@@ -9,12 +9,36 @@ include('config/config.inc.php');
             die('UNAUTHORIZED: You are not authorized to visit this page!');
     }
     // Version checker
-    $curv = '0.0.3';
+    $curv = '0.0.4';
     $dcheck = false; // DEMO MODE = TRUE / FALSE
     $tab = 1;
     $contents = Tools::file_get_contents("https://crezzur.com/versioncheck.php", false);
     if ($contents) {
         $v = json_decode($contents, true);
+    }
+
+    function setCleanerInfo()
+    {
+        $count = 0;
+        $array = array();
+        $list = array('ps_connections', 'ps_connections_source', 'ps_connections_page', 'ps_guest', 'ps_log', 'ps_referrer', 'ps_referrer_shop', 'ps_referrer_cache',
+                      'ps_pagenotfound', 'ps_mail', 'ps_statssearch', 'ps_smarty_cache', 'ps_smarty_last_flush', 'ps_smarty_lazy_cache');
+        $data = Db::getInstance()->executeS('SELECT table_schema as `db`, table_name AS `table`, round(((data_length + index_length) / 1024 / 1024), 2)
+        `size`FROM information_schema.TABLES WHERE table_schema = "'._DB_NAME_.'" ORDER BY (data_length + index_length) DESC');
+
+        foreach ($data as $key => $d) {
+            if (in_array($d['table'], $list)) {
+                if ($d['size'] < 10) {
+                    $r = 'success';
+                } elseif ($d['size'] < 50) {
+                    $r = 'warning';
+                } else {
+                    $r = 'danger';
+                }
+                $array[] = ['tb_name' => $d['table'], 'size' => $d['size'], 'status' => $r];
+            }
+        }
+        return $array;
     }
 
     function setDebug()
@@ -65,6 +89,22 @@ include('config/config.inc.php');
         }
     }
 
+    if (Tools::isSubmit('truncatedb')) {
+        if ($dcheck == false) {
+            $table_name = Tools::GetValue('truncatedb');
+            $list = array('ps_connections', 'ps_connections_source', 'ps_connections_page', 'ps_guest', 'ps_log', 'ps_referrer', 'ps_referrer_shop', 'ps_referrer_cache',
+                      'ps_pagenotfound', 'ps_mail', 'ps_statssearch', 'ps_smarty_cache', 'ps_smarty_last_flush', 'ps_smarty_lazy_cache');
+            if (in_array($table_name, $list)) {
+                Db::getInstance()->execute('TRUNCATE TABLE `'. pSQL($table_name) .'`');
+                $msg = array('status' => 'success', 'msg' => 'Prestashop MYSQL Database <strong>'. $table_name .'</strong> successfully emptied!');
+            } else {
+                $msg = array('status' => 'danger', 'msg' => '<strong>ERROR:</strong> You are trying to empty a table that is not available in the available list!');
+            }
+        } else {
+            $msg = array('status' => 'info', 'msg' => 'myShopRepair is in demo modus, changes where not saved!');
+        }
+            $tab = 4;
+    }
     if(Tools::isSubmit('changeDebug')) {
         if ($dcheck == false) {
             $msg = setDebug();
@@ -563,6 +603,11 @@ label {
 .btn.btn-round, .navbar .navbar-nav > li > a.btn.btn-round {
     border-radius: 30px;
 }
+
+.hovertrash:hover {
+    color: #dc3545;
+    cursor: pointer;
+}
 </style>
 </head>
 <body class="h-100">
@@ -591,7 +636,8 @@ label {
             <a class="nav-item nav-link <?php if($tab == 1) { echo 'active'; } ?>" id="nav-welcome-tab" data-toggle="tab" href="#nav-welcome" role="tab" aria-controls="nav-welcome" aria-selected="true">Welcome</a>
             <a class="nav-item nav-link <?php if($tab == 2) { echo 'active'; } ?>" id="nav-info-tab" data-toggle="tab" href="#nav-info" role="tab" aria-controls="nav-info" aria-selected="false">Installation requirements</a>
             <a class="nav-item nav-link <?php if($tab == 3) { echo 'active'; } ?>" id="nav-contact-tab" data-toggle="tab" href="#nav-contact" role="tab" aria-controls="nav-contact" aria-selected="false">Settings</a>
-            <a class="nav-item nav-link <?php if($tab == 4) { echo 'active'; } ?>" id="nav-log-tab" data-toggle="tab" href="#nav-log" role="tab" aria-controls="nav-loh" aria-selected="false">Changelog</a>
+            <a class="nav-item nav-link <?php if($tab == 4) { echo 'active'; } ?>" id="nav-cleaner-tab" data-toggle="tab" href="#nav-cleaner" role="tab" aria-controls="nav-cleaner" aria-selected="false">PS Cleaner</a>
+            <a class="nav-item nav-link <?php if($tab == 5) { echo 'active'; } ?>" id="nav-log-tab" data-toggle="tab" href="#nav-log" role="tab" aria-controls="nav-log" aria-selected="false">Changelog</a>
         </div>
     </nav>
     <div class="tab-content" id="nav-tabContent">
@@ -645,7 +691,7 @@ label {
                         <table class="table table-striped table-sm text-center table-bordered">
                             <thead>
                                 <tr>
-                                    <th class="text-left">#</th>
+                                    <th class="text-left">Prestashop version - <?php echo  _PS_VERSION_; ?></th>
                                     <th>Required</th>
                                     <th>Recommended</th>
                                     <th>Current</th>
@@ -772,7 +818,7 @@ label {
                         <div class="card-header">Settings Overview</div>
                         <div class="card-body">
                             <h5 class="card-title m-b-0">Options:</h5>
-                            <form id="settings" action="?" method="post"></form>
+                            <form id="settings" action="?crezzur_token=<?php echo $yourtoken; ?>" method="post"></form>
                                 <table class="table table-bordered">
                                     <tr>
                                         <td>Using the <b>update</b> button will regenerate your <b>.htaccess</b> file with the latest Prestashop settings.</td>
@@ -800,7 +846,7 @@ label {
                     <div class="card">
                         <div class="card-header">Prestashop MYSQL Database</div>
                         <div class="card-body">
-<form id="savedatabase" action="?" method="post">
+<form id="savedatabase" action="?crezzur_token=<?php echo $yourtoken; ?>" method="post">
                             <h5 class="card-title text-right">Shop Maintenance</h5>
                             <div class="form-group row">
                                 <label class="control-label col-md-4 text-right" for="ssl">Enable Shop</label>
@@ -871,13 +917,41 @@ label {
             </div>
         </div>
 
-        <div class="tab-pane fade <?php if($tab == 4) { echo 'show active'; } ?>" id="nav-log" role="tabpanel" aria-labelledby="nav-log-tab">
+        <div class="tab-pane fade <?php if($tab == 4) { echo 'show active'; } ?>" id="nav-cleaner" role="tabpanel" aria-labelledby="nav-cleaner-tab">
+            <div class="container mt-5">
+                <div class="table-responsive">
+                    
+                    <table class="table table-striped table-sm text-center table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Table name</th>
+                                <th>Table size</th>
+                                <th>Empty Table</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <form id="truncatedb" action="?crezzur_token=<?php echo $yourtoken; ?>" method="post">
+                            <?php 
+                            $dbinfo = setCleanerInfo();
+                            foreach ($dbinfo as $r) {
+                                echo '<tr><td class="text-left">'.$r['tb_name'].'</td><td class="table-'.$r['status'].'">'.$r['size'].' MB</td><td><button name="truncatedb" type="submit" value="'.$r['tb_name'].'" class="btn btn-danger">Empty <i class="fas fa-trash"></i></button></td></tr>';
+                            } ?>
+                            </form>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade <?php if($tab == 5) { echo 'show active'; } ?>" id="nav-log" role="tabpanel" aria-labelledby="nav-log-tab">
             <div class="container mt-5">
                 <div class="row">
                     <div class="col-md-10">
                         <div class="card">
                             <div class="card-header">Information about latest updates and bugfixes</div>
                             <div class="card-body text-left px-5 py-4 text-muted">
+                                <b>Version 0.0.4 - Release 19/07/2021</b><br>
+                                Added database cleaner function in tab PS Cleaner.<br>
                                 <b>Version 0.0.3 - Release 12/07/2021</b><br>
                                 Added checker for PHP setting allow_url_fopen, which is required for a smooth back-office.<br>
                                 Added token security to prevent unauthorized access to the myshoprepair file. <br>
@@ -907,7 +981,7 @@ label {
             <!-- END Footer -->
 </div>
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script> 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script> 
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> 
 <script>
