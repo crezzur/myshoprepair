@@ -1,4 +1,4 @@
-<b>Current version:</b> 0.0.3<br><br>
+<b>Current version:</b> 0.0.4<br><br>
 <b>DEMO:</b><br>
 You can view a demo of <b>myShopRepair</b> <a href="https://crezzur.com/demoshop17/myshoprepair.php?crezzur_token=b48a877f50d20963eaa2ccab09651c" target="_blank">here</a>
 <br><br>
